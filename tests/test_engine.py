@@ -1,6 +1,9 @@
 import copy
 from datetime import datetime, timedelta, timezone
 import json
+import os
+import subprocess
+import sys
 import threading
 import unittest
 from urllib.request import Request, urlopen
@@ -159,6 +162,12 @@ class EngineTests(unittest.TestCase):
         for label in ('1. АНАЛИЗ', '2. ЧЕК-ЛИСТ', '3. РЕШЕНИЕ', '4. УПРАВЛЕНИЕ ПОЗИЦИЕЙ'):
             self.assertIn(label, report)
 
+    def test_cli_outputs_utf8_under_windows_legacy_encoding(self):
+        env = dict(os.environ, PYTHONIOENCODING='cp1251')
+        run = subprocess.run([sys.executable, '-m', 'bot', 'examples/synthetic-long.json', '--json'],
+                             capture_output=True, env=env, check=True)
+        self.assertEqual(json.loads(run.stdout.decode('utf-8'))['decision'], 'LONG')
+
 
 class ApiTests(unittest.TestCase):
     @classmethod
@@ -190,9 +199,11 @@ class ApiTests(unittest.TestCase):
         with self.assertRaises(HTTPError) as err:
             urlopen(req)
         self.assertEqual(err.exception.code, 400)
+        err.exception.close()
 
     def test_cross_origin_rejected(self):
         req = Request(self.url+'/api/analyze', data=b'{}', headers={'Content-Type': 'application/json', 'Origin': 'https://example.com'})
         with self.assertRaises(HTTPError) as err:
             urlopen(req)
         self.assertEqual(err.exception.code, 403)
+        err.exception.close()

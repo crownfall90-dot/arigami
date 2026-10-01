@@ -1,11 +1,14 @@
 import argparse
 import json
+import sys
 from pathlib import Path
 from .engine import analyze
 from .report import render
 
 
 def main():
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
     parser = argparse.ArgumentParser(description='VP-SMC-CVD: анализ предоставленных данных')
     parser.add_argument('input', nargs='?', help='JSON-файл для анализа / исторического воспроизведения')
     parser.add_argument('--json', action='store_true', help='Результат JSON')
