@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VP-SMC-CVD · Тройное подтверждение</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c1421;color:#e6edf8}body{max-width:1100px;margin:45px auto;padding:0 24px}h1{font-size:30px}p{color:#a6b8d1;line-height:1.6}.tag{color:#75e4be;letter-spacing:.12em;font-size:12px}textarea{box-sizing:border-box;width:100%;min-height:290px;background:#121f32;border:1px solid #314865;border-radius:12px;padding:18px;color:#e6edf8;font:14px monospace}button,.file{display:inline-block;background:#77e5bf;color:#09251c;padding:12px 20px;border:0;border-radius:8px;cursor:pointer;font-weight:700;margin:12px 12px 12px 0}.file{background:#223b56;color:#e6edf8}input{display:none}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#121f32;border-radius:12px;padding:24px;line-height:1.7}button:disabled{opacity:.5}.error{color:#ffb2a9}footer{color:#8298b8;margin:30px 0}
+</style>
+<p class="tag">ЛОКАЛЬНЫЙ АНАЛИЗАТОР • 7 ОБЯЗАТЕЛЬНЫХ ПРОВЕРОК</p>
+<h1>VP-SMC-CVD «Тройное подтверждение»</h1>
+<p>Загрузите данные рынка в JSON. Система проверит контекст, зону, sweep, CVD, объём и риск. Отсутствие обязательного подтверждения означает ПРОПУСК.</p>
+<label for="data">Рыночные данные</label><textarea id="data" spellcheck="false" placeholder='{"symbol":"BTCUSDT", ...}'></textarea>
+<label class="file">Загрузить JSON<input id="file" type="file" accept="application/json,.json"></label><button id="analyze">Проверить сетап</button>
+<p id="status" role="status"></p><pre id="output">Результат появится после анализа. Сигнал не предполагается заранее.</pre>
+<footer>Принимаются структурированные данные. Скриншоты и автоматическая загрузка котировок пока не поддерживаются. Ордеры на биржу не отправляются.</footer>
+<script>
+const input=document.getElementById('data'),status=document.getElementById('status'),output=document.getElementById('output'),button=document.getElementById('analyze');
+document.getElementById('file').onchange=async e=>{if(e.target.files[0]) input.value=await e.target.files[0].text()};
+button.onclick=async()=>{button.disabled=true;status.textContent='Проверка данных…';status.className='';try{const data=JSON.parse(input.value);const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const body=await r.json();if(!r.ok)throw Error(body.error);output.textContent=body.report;status.textContent='Решение: '+body.analysis.decision;}catch(e){status.textContent=e.message;status.className='error';output.textContent='Анализ не выполнен.';}finally{button.disabled=false}};
+</script></html>
