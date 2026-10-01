@@ -59,9 +59,13 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(length), parse_constant=lambda x: (_ for _ in ()).throw(ValueError(x)))
             if not isinstance(data, dict):
                 raise ValueError('Требуется JSON-объект')
-            if 'as_of' in data and not 0 <= (datetime.now(timezone.utc)-stamp(data['as_of'])).total_seconds() <= 60:
-                raise ValueError('as_of должен быть не старше 60 секунд и не в будущем; для истории используйте CLI')
             result = analyze(data)
+            if 'as_of' in data and not 0 <= (datetime.now(timezone.utc)-stamp(data['as_of'])).total_seconds() <= 60:
+                reason = 'Снимок устарел или датирован будущим: показан только анализ данных, вход запрещён'
+                result['filters']['snapshot_freshness'] = {'passed': False, 'detail': reason}
+                result['decision'] = 'ПРОПУСК'
+                result['trade'] = None
+                result['reasons'].insert(0, reason)
             self.send(200, {'analysis': result, 'report': render(result)})
         except (ValueError, TypeError, TimeoutError, RecursionError) as exc:
             self.send(400, {'error': str(exc)})

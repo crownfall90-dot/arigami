@@ -196,10 +196,11 @@ class ApiTests(unittest.TestCase):
 
     def test_historical_data_rejected_by_live_api(self):
         req = Request(self.url+'/api/analyze', data=json.dumps(fixture()).encode(), headers={'Content-Type': 'application/json'})
-        with self.assertRaises(HTTPError) as err:
-            urlopen(req)
-        self.assertEqual(err.exception.code, 400)
-        err.exception.close()
+        with urlopen(req) as response:
+            result = json.load(response)['analysis']
+        self.assertEqual(result['decision'], 'ПРОПУСК')
+        self.assertIsNone(result['trade'])
+        self.assertFalse(result['filters']['snapshot_freshness']['passed'])
 
     def test_cross_origin_rejected(self):
         req = Request(self.url+'/api/analyze', data=b'{}', headers={'Content-Type': 'application/json', 'Origin': 'https://example.com'})

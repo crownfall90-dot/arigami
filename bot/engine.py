@@ -112,8 +112,6 @@ def _analyze(data):
             if previous and when - previous != timedelta(minutes=tf):
                 raise EvidenceError('Свечи должны идти подряд без пропусков и дублей')
             previous = when
-        if not 0 <= (now - previous).total_seconds() <= 60:
-            raise EvidenceError('Сигнал устарел: последняя свеча закрылась более 60 секунд назад')
         return candles, now, tf
 
     loaded = evidence('OHLCV / метаданные', base)
@@ -122,6 +120,11 @@ def _analyze(data):
         return result
     candles, now, tf = loaded
     last = candles[-1]
+    age = (now - stamp(last['close_time'])).total_seconds()
+    result['filters']['freshness'] = {
+        'passed': 0 <= age <= 60,
+        'detail': f'Возраст последней закрытой свечи: {age:.1f} с; для входа требуется не более 60 с',
+    }
     price = last['close']
     context = result['context']
     context.update(symbol=data['symbol'], exchange=data['exchange'], timeframe=tf, price=price,

@@ -8,7 +8,8 @@ def render(result):
         value = c.get(key)
         return 'НЕТ ДАННЫХ' if value is None else str(value)
     lines = ['## 1. АНАЛИЗ', '', f'**Актив:** {show("symbol")} ({show("exchange")})',
-             f'**Таймфрейм:** {show("timeframe")}', f'**Текущая цена:** {show("price")}',
+             f'**Таймфрейм:** {show("timeframe")}', f'**Время снимка (UTC):** {show("as_of")}',
+             f'**Цена закрытия последней свечи:** {show("price")}',
              f'**Режим рынка:** {c.get("regime", "НЕОПРЕДЕЛЁННЫЙ")}', f'**Структура:** {show("structure")}']
     for name, key in [('VWAP', 'vwap'), ('POC', 'poc'), ('VAH', 'vah'), ('VAL', 'val'),
                       ('HVN', 'hvn'), ('LVN', 'lvn')]:
