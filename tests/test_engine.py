@@ -124,6 +124,15 @@ class EngineTests(unittest.TestCase):
         d['smart_money'][0]['created_at'] = d['candles'][-5]['close_time']
         self.assertFalse(analyze(d)['checks'][2]['passed'])
 
+    def test_smart_money_may_overlap_working_zone_without_close_inside_it(self):
+        d = fixture()
+        d['smart_money'][0]['zone'] = [100.98, 101.01]
+        d['candles'][-1]['close'] = 101.02
+        d['profile']['poc'] = [101, 101.05]
+        d['profile']['hvn'] = [[101, 101.05], [120, 121]]
+        d['vwap']['value'] = 101.02
+        self.assertTrue(analyze(d)['checks'][2]['passed'])
+
     def test_no_deposit_does_not_invent_size(self):
         d = fixture()
         del d['account']
@@ -193,6 +202,16 @@ class ApiTests(unittest.TestCase):
         req = Request(self.url+'/api/analyze', data=b'{}', headers={'Content-Type': 'application/json'})
         with urlopen(req) as r:
             self.assertEqual(json.load(r)['analysis']['decision'], 'ПРОПУСК')
+
+    def test_auto_market_endpoint_handles_provider_failure(self):
+        from unittest.mock import patch
+        from urllib.error import URLError
+        req = Request(self.url+'/api/refresh-eth', data=b'{}')
+        with patch('bot.server.fetch', side_effect=URLError('offline')):
+            with self.assertRaises(HTTPError) as err:
+                urlopen(req)
+        self.assertEqual(err.exception.code, 503)
+        err.exception.close()
 
     def test_historical_data_rejected_by_live_api(self):
         req = Request(self.url+'/api/analyze', data=json.dumps(fixture()).encode(), headers={'Content-Type': 'application/json'})

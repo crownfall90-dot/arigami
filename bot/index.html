@@ -8,11 +8,12 @@
 <h1>VP-SMC-CVD «Тройное подтверждение»</h1>
 <p>Загрузите данные рынка в JSON. Система проверит контекст, зону, sweep, CVD, объём и риск. Отсутствие обязательного подтверждения означает ПРОПУСК.</p>
 <label for="data">Рыночные данные</label><textarea id="data" spellcheck="false" placeholder='{"symbol":"BTCUSDT", ...}'></textarea>
-<label class="file">Загрузить JSON<input id="file" type="file" accept="application/json,.json"></label><button id="analyze">Проверить сетап</button>
+<button id="refresh">Обновить ETHUSDT</button><label class="file">Загрузить JSON<input id="file" type="file" accept="application/json,.json"></label><button id="analyze">Проверить сетап</button>
 <p id="status" role="status"></p><pre id="output">Результат появится после анализа. Сигнал не предполагается заранее.</pre>
-<footer>Принимаются структурированные данные. Скриншоты и автоматическая загрузка котировок пока не поддерживаются. Ордеры на биржу не отправляются.</footer>
+<footer>«Обновить ETHUSDT» загружает закрытые 15m свечи, CVD и сессионный VWAP из Binance. Ордеры на биржу не отправляются.</footer>
 <script>
-const input=document.getElementById('data'),status=document.getElementById('status'),output=document.getElementById('output'),button=document.getElementById('analyze');
+const input=document.getElementById('data'),status=document.getElementById('status'),output=document.getElementById('output'),button=document.getElementById('analyze'),refresh=document.getElementById('refresh');
 document.getElementById('file').onchange=async e=>{if(e.target.files[0]) input.value=await e.target.files[0].text()};
 button.onclick=async()=>{button.disabled=true;status.textContent='Проверка данных…';status.className='';try{const data=JSON.parse(input.value);const r=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});const body=await r.json();if(!r.ok)throw Error(body.error);output.textContent=body.report;status.textContent='Решение: '+body.analysis.decision;}catch(e){status.textContent=e.message;status.className='error';output.textContent='Анализ не выполнен.';}finally{button.disabled=false}};
+refresh.onclick=async()=>{refresh.disabled=true;status.textContent='Загрузка ETHUSDT из Binance…';status.className='';try{const r=await fetch('/api/refresh-eth',{method:'POST'}),body=await r.json();if(!r.ok)throw Error(body.error);input.value=JSON.stringify(body.market_data,null,2);output.textContent=body.report;status.textContent='ETHUSDT загружен. Решение: '+body.analysis.decision;}catch(e){status.textContent=e.message;status.className='error';}finally{refresh.disabled=false}};
 </script></html>

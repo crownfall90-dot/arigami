@@ -64,13 +64,19 @@ def fetch():
     return data, raw
 
 
-def main():
-    data, raw = fetch()
+def save_snapshot(data, raw):
+    """Persist successful pulls only; a failed refresh never overwrites the last snapshot."""
     folder = Path(__file__).resolve().parents[1] / 'private-data'
     folder.mkdir(exist_ok=True)
     for filename, value in [('ethusdt-15m.json', data), ('ethusdt-15m-raw.json', raw)]:
         path = folder / filename
         path.write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False), encoding='utf-8')
+
+
+def main():
+    data, raw = fetch()
+    save_snapshot(data, raw)
+    folder = Path(__file__).resolve().parents[1] / 'private-data'
     print(json.dumps(dict(path=str(folder / 'ethusdt-15m.json'), symbol=data['symbol'],
                          candles=len(data['candles']), as_of=data['as_of'],
                          last_closed=data['candles'][-1]['close_time'],

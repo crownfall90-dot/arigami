@@ -148,7 +148,9 @@ def _analyze(data):
             index = indexes[-1]
             level = candles[index][key]
             swept = last['low'] < level < price if direction == 'LONG' else price < level < last['high']
-            if swept:
+            previously_broken = any(c[key] < level if direction == 'LONG' else c[key] > level
+                                    for c in candles[index+1:-1])
+            if swept and not previously_broken:
                 candidates.append((direction, index, level))
     direction, pivot, level = candidates[0] if len(candidates) == 1 else (None, None, None)
     context['liquidity'] = {'direction': direction, 'level': level, 'pivot_index': pivot}
@@ -203,7 +205,7 @@ def _analyze(data):
                             for c in candles[:-1] if stamp(c['close_time']) > created)
             if (z['confirmed'] is True and z['unmitigated'] is True and z['source']
                     and not revisited and z['direction'] == direction
-                    and inside(price, bounds) and prof and prof[1]
+                    and prof and prof[1]
                     and max(bounds[0], prof[1][0]) <= min(bounds[1], prof[1][1])):
                 matches.append(z)
         context['smart_money'] = matches
