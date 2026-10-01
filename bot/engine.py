@@ -164,7 +164,9 @@ def _analyze(data):
             raise EvidenceError(f'Нужен профиль {expected} и источник')
         if stamp(p['start']) >= stamp(p['end']) or stamp(p['end']) != stamp(last['close_time']):
             raise EvidenceError('Диапазон профиля должен завершаться на последней закрытой свече')
-        out = {k: zone(p[k], k) for k in ('poc', 'vah', 'val', 'previous_poc')}
+        out = {k: zone(p[k], k) for k in ('poc', 'vah', 'val')}
+        if 'previous_poc' in p:
+            out['previous_poc'] = zone(p['previous_poc'], 'previous_poc')
         out.update({k: [zone(z, k) for z in p[k]] for k in ('hvn', 'lvn')})
         if not out['hvn'] or not out['lvn'] or out['val'][1] > out['vah'][0]:
             raise EvidenceError('Нужны HVN, LVN и корректная область стоимости')
@@ -269,10 +271,10 @@ def _analyze(data):
     context_ok = False
     if prof and vw is not None and direction:
         p = prof[0]
-        delta = sum(p['poc'])/2-sum(p['previous_poc'])/2
-        if structure == 'HH/HL' and price > vw and delta >= 0:
+        delta = sum(p['poc'])/2-sum(p['previous_poc'])/2 if 'previous_poc' in p else None
+        if structure == 'HH/HL' and price > vw and (delta is None or delta >= 0):
             context['regime'] = 'ВОСХОДЯЩИЙ ТРЕНД'
-        elif structure == 'LH/LL' and price < vw and delta <= 0:
+        elif structure == 'LH/LL' and price < vw and (delta is None or delta <= 0):
             context['regime'] = 'НИСХОДЯЩИЙ ТРЕНД'
         elif structure == 'БОКОВИК':
             context['regime'] = 'БОКОВИК'
@@ -280,9 +282,9 @@ def _analyze(data):
         reaction = result['checks'][3]['passed'] and result['checks'][4]['passed']
         context_ok = ((price > vw or inside(price, p['val']) and reaction) if direction == 'LONG'
                       else (price < vw or inside(price, p['vah']) and reaction))
-        if direction == 'LONG' and structure == 'LH/LL' and delta < 0:
+        if direction == 'LONG' and structure == 'LH/LL' and delta is not None and delta < 0:
             context_ok = False
-        if direction == 'SHORT' and structure == 'HH/HL' and delta > 0:
+        if direction == 'SHORT' and structure == 'HH/HL' and delta is not None and delta > 0:
             context_ok = False
     result['filters']['direction'] = {'passed': context_ok, 'detail': 'Контекст направления / запрет против тренда и POC'}
 

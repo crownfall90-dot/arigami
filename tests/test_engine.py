@@ -66,6 +66,11 @@ class EngineTests(unittest.TestCase):
             v['value'] = -v['value']
         self.assertEqual(analyze(d)['decision'], 'SHORT')
 
+    def test_current_session_profile_does_not_require_previous_poc(self):
+        d = fixture()
+        del d['profile']['previous_poc']
+        self.assertEqual(analyze(d)['decision'], 'LONG')
+
     def test_each_confirmation_blocks(self):
         mutations = [lambda d: d['profile'].update(poc=[102, 103], hvn=[[120, 121]]),
                      lambda d: d['vwap'].update(value=100),

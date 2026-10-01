@@ -7,6 +7,7 @@ from .engine import analyze, stamp, EvidenceError
 from .report import render
 from .fetch_eth import fetch, save_snapshot
 from urllib.error import HTTPError, URLError
+from .live import status as live_status
 
 PAGE = Path(__file__).with_name('index.html')
 MAX_BODY = 2_000_000
@@ -40,6 +41,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send(200, PAGE.read_bytes(), 'text/html; charset=utf-8')
         elif self.path == '/health':
             self.send(200, {'status': 'ok', 'system': 'VP-SMC-CVD', 'execution': False})
+        elif self.path == '/api/live-status':
+            self.send(200, live_status())
         else:
             self.send(404, {'error': 'Не найдено'})
 
