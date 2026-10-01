@@ -35,3 +35,12 @@ class LiveCollectorTests(unittest.TestCase):
             self.assertEqual(result['type'], 'session')
             self.assertIn('poc', result)
             db.close()
+
+    def test_first_second_of_new_session_marks_forward_coverage(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = connect(__import__('pathlib').Path(folder) / 'trades.sqlite3')
+            start = session_start_ms(1_800_000_000_000)
+            save(db, self.event(1, start + 500, 3000))
+            self.assertEqual(state(db, 'bootstrap_session_start'), str(start))
+            self.assertIsNotNone(state(db, 'bootstrap_complete'))
+            db.close()

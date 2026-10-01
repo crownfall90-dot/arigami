@@ -63,7 +63,20 @@ def validate(event):
 
 
 def save(db, event):
-    db.execute('INSERT OR IGNORE INTO trades VALUES(?,?,?,?,?)', validate(event))
+    trade = validate(event)
+    aid, when, _, _, _ = trade
+    start = session_start_ms(when)
+    known_start = state(db, 'bootstrap_session_start')
+    # A connected socket that observes the first second of a new UTC session
+    # has complete forward coverage from its start.  Any later connection is
+    # deliberately treated as incomplete until REST bootstrap succeeds.
+    if known_start != str(start):
+        db.execute("DELETE FROM state WHERE key IN ('bootstrap_complete','bootstrap_imported','bootstrap_error')")
+        state(db, 'bootstrap_session_start', start)
+        if when <= start + 1000:
+            state(db, 'bootstrap_complete', now_ms())
+            state(db, 'bootstrap_imported', 0)
+    db.execute('INSERT OR IGNORE INTO trades VALUES(?,?,?,?,?)', trade)
 
 
 def request(path, **params):
